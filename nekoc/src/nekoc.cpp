@@ -1,6 +1,7 @@
+#include <cstring>
 #include <neko/neko.hpp>
 
-#include <argparse.hpp>
+#include <argparse/argparse.hpp>
 
 #include <fstream>
 

@@ -15,6 +15,7 @@
 %code requires
 {
 #include <iostream>
+#include <cstdint>
 #include <algorithm> // max
 
 struct lexcontext;

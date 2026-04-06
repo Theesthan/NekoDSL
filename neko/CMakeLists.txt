@@ -1,10 +1,13 @@
 add_library(neko STATIC
+	src/ast.hpp
 	src/binary.cpp
 	src/binary.tpp
 	src/code_generator.cpp
 	src/code_generator.tpp
 	src/compiler.cpp
 	src/neko_p.hpp
+	src/neko_parser.hpp
+	src/neko_parser.cpp
 	src/parser.cpp
 	src/parser.yy
 

@@ -1,11 +1,13 @@
 #pragma once
 
+#include "ast.hpp"
 #include "neko/neko.hpp"
 
 #include <spirv/unified1/spirv.hpp>
 #include <spirv/unified1/GLSL.std.450.h>
 #include <spirv-tools/libspirv.hpp>
 
+#include <string>
 #include <variant>
 #include <unordered_map>
 
@@ -15,7 +17,7 @@ namespace neko
 	const uint32_t Version = 0x00000100;
 	const uint32_t SourceLanguageNeko = spv::SourceLanguageUnknown;
 	 
-	const spv_target_env SpvTargetEnv = SPV_ENV_UNIVERSAL_1_5;
+	const spv_target_env SpvTargetEnv = SPV_ENV_UNIVERSAL_1_6;
 
 	class Binary
 	{
@@ -54,7 +56,7 @@ namespace neko
 		uint32_t registerFunction();
 		void registerEntryPoint(spv::ExecutionModel executionModel, uint32_t function);
 
-		std::vector<uint32_t> generate(Options options);
+		std::vector<uint32_t> generate(const ast::TranslationUnit& ast, Options options);
 	private:
 		uint32_t getNextId();
 		uint32_t nextId = 1;

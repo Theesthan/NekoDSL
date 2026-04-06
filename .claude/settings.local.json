@@ -5,7 +5,15 @@
       "Bash(mv kytec:*)",
       "Bash(mv kytestl:*)",
       "Bash(mv neko/include/neko/kyte.hpp neko/include/neko/neko.hpp)",
-      "Bash(mv nekoc/src/kyte.cpp nekoc/src/nekoc.cpp)"
+      "Bash(mv nekoc/src/kyte.cpp nekoc/src/nekoc.cpp)",
+      "Bash(cmake --build dependencies/build -j4)",
+      "Bash(cmake --build build -j4)",
+      "Bash(./build/test/neko/neko_test.exe)",
+      "Bash(./build/nekoc/nekoc.exe -k sample -m nekostl/modules -v)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(xxd sample.neko)",
+      "Bash(xxd sample.spv)",
+      "Bash(./build/nekoc/nekoc.exe -k sample -m nekostl/modules)"
     ]
   }
 }

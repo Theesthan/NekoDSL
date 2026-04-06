@@ -1,0 +1,15 @@
+// NekoDSL sample shader — vertex + fragment pair
+
+const color_component := (index : int) $ int {
+    return index;
+}
+
+@vertex
+const vertex_main := () $ int {
+    return color_component(0);
+}
+
+@fragment
+const fragment_main := () $ int {
+    return color_component(1);
+}

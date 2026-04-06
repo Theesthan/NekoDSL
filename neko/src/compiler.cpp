@@ -1,17 +1,19 @@
 #include "neko_p.hpp"
+#include "neko_parser.hpp"
 
-#include <iostream> // std::cout, std::cerr, std::endl
+#include <iostream>
+#include <stdexcept>
 
 namespace neko
 {
 	std::vector<uint32_t> Compiler::compile(const std::string& source) const
 	{
-		// AST Transform
-		// parse(source);
+		// Parse NekoDSL source into an AST
+		const ast::TranslationUnit ast = parse_source(source);
 
+		// Lower AST to SPIR-V binary
 		CodeGenerator cg;
-
-		std::vector<uint32_t> binary = cg.generate(options);
+		std::vector<uint32_t> binary = cg.generate(ast, options);
 
 		if (options.validate || options.showDisassembly)
 		{
@@ -27,14 +29,16 @@ namespace neko
 			// Validation
 			if (options.validate)
 			{
-				if (!core.Validate(binary)) throw std::exception();
+				if (!core.Validate(binary))
+					throw std::runtime_error("SPIR-V validation failed");
 			}
 
 			// Disassembly
 			if (options.showDisassembly)
 			{
 				std::string disassembly;
-				if (!core.Disassemble(binary, &disassembly)) throw std::exception();
+				if (!core.Disassemble(binary, &disassembly))
+					throw std::runtime_error("SPIR-V disassembly failed");
 				std::cout << disassembly << "\n";
 			}
 		}
@@ -51,7 +55,7 @@ namespace neko
 	{
 		if (newOptions.optimizationLevel < 0 || newOptions.optimizationLevel > 4)
 		{
-			throw std::exception("Invalid optimization level");
+			throw std::runtime_error("Invalid optimization level");
 		}
 		options = newOptions;
 	}
