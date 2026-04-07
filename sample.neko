@@ -1,15 +1,11 @@
-// NekoDSL sample shader — vertex + fragment pair
-
-const color_component := (index : int) $ int {
-    return index;
-}
+// NekoDSL sample shader — vertex + fragment pair with interface variables
 
 @vertex
-const vertex_main := () $ int {
-    return color_component(0);
+const vertex_main := (in_pos : vec4) $ neko_position : vec4 {
+    return in_pos;
 }
 
 @fragment
-const fragment_main := () $ int {
-    return color_component(1);
+const fragment_main := () $ neko_color : vec4 {
+    return vec4(1.0, 0.0, 0.5, 1.0);
 }
