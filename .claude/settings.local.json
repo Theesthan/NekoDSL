@@ -16,7 +16,9 @@
       "Bash(./build/nekoc/nekoc.exe -k sample -m nekostl/modules)",
       "Bash(./build/nekoc/nekoc.exe -k sample -v)",
       "Bash(./build/nekoc/nekoc.exe --help)",
-      "Bash(./build/nekoc/nekoc.exe -k sample -g)"
+      "Bash(./build/nekoc/nekoc.exe -k sample -g)",
+      "Bash(./build/nekoc/nekoc.exe -k sample)",
+      "Bash(python3 -c ':*)"
     ]
   }
 }

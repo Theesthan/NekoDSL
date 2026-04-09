@@ -1,11 +1,21 @@
-// NekoDSL sample shader — vertex + fragment pair with interface variables
+// NekoDSL sample shader — vertex + fragment pair with arithmetic and let bindings
 
+// Helper: scale a float value
+const scale := (v : float) $ float {
+    return v * 2.0;
+}
+
+// Vertex shader: pass through position
 @vertex
 const vertex_main := (in_pos : vec4) $ neko_position : vec4 {
     return in_pos;
 }
 
+// Fragment shader: compute colour using arithmetic and local bindings
 @fragment
 const fragment_main := () $ neko_color : vec4 {
-    return vec4(1.0, 0.0, 0.5, 1.0);
+    let r : float = scale(0.5);
+    let g : float = 0.0;
+    let b : float = r - 0.5;
+    return vec4(r, g, b, 1.0);
 }
