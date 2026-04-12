@@ -18,7 +18,11 @@
       "Bash(./build/nekoc/nekoc.exe --help)",
       "Bash(./build/nekoc/nekoc.exe -k sample -g)",
       "Bash(./build/nekoc/nekoc.exe -k sample)",
-      "Bash(python3 -c ':*)"
+      "Bash(python3 -c ':*)",
+      "Bash(python3)",
+      "Bash(cmake --build dependencies/build/neko --config Release -j4)",
+      "Bash(./neko_test.exe)",
+      "Bash(./neko_test.exe --gtest_filter=\"*While*\")"
     ]
   }
 }

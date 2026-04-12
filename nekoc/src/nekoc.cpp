@@ -65,6 +65,7 @@ int main(int argc, char** argv)
     neko::Options o;
     o.debugInfo = program.get<bool>("-g");
     o.optimizationLevel = program.get<int>("-o");
+    o.moduleDirs = program.get<std::vector<std::string>>("-m");
     try
     {
         c.setOptions(o);
@@ -74,8 +75,6 @@ int main(int argc, char** argv)
         std::cerr << e.what() << std::endl;
         return COMPILER_OPTIONS_ERROR;
     }
-
-    std::vector<std::string> module_dirs = program.get<std::vector<std::string>>("-m");
 
     std::vector<std::string> sources = program.get<std::vector<std::string>>("-k");
     for (std::string source : sources)

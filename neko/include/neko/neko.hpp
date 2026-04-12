@@ -13,6 +13,7 @@ namespace neko
 		bool showDisassembly = false;
 		bool profile = false;
 		uint8_t optimizationLevel = 0;
+		std::vector<std::string> moduleDirs; // search paths for import("...") resolution
 	};
 
 	class Compiler
