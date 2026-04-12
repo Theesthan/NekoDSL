@@ -1,0 +1,51 @@
+// NekoDSL demo — exercises all major language features
+//
+//  Features shown:
+//    helper function, vertex + fragment shaders,
+//    UBO, sampler2D, interpolation mode (@noperspective),
+//    if/else, while loop, let / let mut
+
+// ── Helper: saturate a float to [0, 1] ───────────────────────────────────────
+const saturate := (v : float) $ float {
+    let mut r : float = v;
+    if (r < 0.0) { r = 0.0; }
+    if (r > 1.0) { r = 1.0; }
+    return r;
+}
+
+// ── Uniform buffer — set=0, binding=0 ────────────────────────────────────────
+@uniform(0, 0) const SceneData := {
+    brightness : float
+};
+
+// ── Texture sampler — set=0, binding=1 ───────────────────────────────────────
+@sampler(0, 1) const albedo : sampler2D;
+
+// ── Vertex shader ─────────────────────────────────────────────────────────────
+@vertex
+const vert := (pos : vec2) $ neko_position : vec4 {
+    return vec4(pos, 0.0, 1.0);
+}
+
+// ── Fragment shader ───────────────────────────────────────────────────────────
+@fragment
+const frag := (uv : vec2 @noperspective) $ neko_color : vec4 {
+    // Sample texture — returns vec4
+    let color : vec4 = sample(albedo, uv);
+
+    // Read UBO brightness and clamp it
+    let b : float = saturate(brightness);
+
+    // While-loop: sum 4 * 0.25 → 1.0
+    let mut acc : float = 0.0;
+    let mut i   : float = 0.0;
+    while (i < 4.0) {
+        acc = acc + 0.25;
+        i   = i   + 1.0;
+    }
+
+    // Scale alpha by brightness * loop result
+    let alpha : float = b * acc;
+
+    return vec4(b, b, b, alpha);
+}

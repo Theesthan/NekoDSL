@@ -63,7 +63,9 @@ int main(int argc, char** argv)
 
     neko::Compiler c;
     neko::Options o;
-    o.debugInfo = program.get<bool>("-g");
+    o.debugInfo        = program.get<bool>("-g");
+    o.showDisassembly  = program.get<bool>("-v");
+    o.validate         = program.get<bool>("-v"); // -v implies validation
     o.optimizationLevel = program.get<int>("-o");
     o.moduleDirs = program.get<std::vector<std::string>>("-m");
     try
