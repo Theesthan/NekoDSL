@@ -81,6 +81,7 @@ void collect_expr_calls(const ast::Expr& expr, std::vector<std::string>& out)
         break;
     case ast::ExprKind::BinaryOp:
     case ast::ExprKind::UnaryOp:
+    case ast::ExprKind::Swizzle:
         for (const auto& arg : expr.args) collect_expr_calls(arg, out);
         break;
     default: break;
@@ -790,6 +791,85 @@ std::vector<uint32_t> CodeGenerator::generate(const ast::TranslationUnit& ast,
                 return { result_id, e.name };
             }
 
+            // GLSL.std.450 single-argument math built-ins (float → float)
+            static const std::unordered_map<std::string, uint32_t> kGlsl1 = {
+                { "sin",   13 }, { "cos",   14 }, { "tan",   15 },
+                { "asin",  16 }, { "acos",  17 }, { "atan",  18 },
+                { "floor", 8  }, { "ceil",  9  }, { "fract", 10 },
+                { "abs",   4  }, { "sqrt",  31 }, { "sign",  6  },
+                { "normalize", 69 }, { "length_vec", 66 },
+            };
+            auto git1 = kGlsl1.find(e.name);
+            if (git1 != kGlsl1.end() && e.args.size() == 1) {
+                const uint32_t glsl_id = getExtInstID("GLSL.std.450");
+                auto [arg_id, arg_ty] = emit_expr(e.args[0], locals, mut_locals);
+                const std::string ret_ty = (e.name == "normalize") ? arg_ty : "float";
+                const uint32_t result_id = getNextId();
+                func_bin.writeInstruction(spv::OpExtInst,
+                    get_type_id(ret_ty), result_id, glsl_id,
+                    git1->second, arg_id);
+                return { result_id, ret_ty };
+            }
+
+            // length(vec) → float  (alias without the _vec suffix)
+            if (e.name == "length" && e.args.size() == 1) {
+                const uint32_t glsl_id = getExtInstID("GLSL.std.450");
+                auto [arg_id, arg_ty] = emit_expr(e.args[0], locals, mut_locals);
+                const uint32_t result_id = getNextId();
+                func_bin.writeInstruction(spv::OpExtInst,
+                    get_type_id("float"), result_id, glsl_id,
+                    static_cast<uint32_t>(66), arg_id);
+                return { result_id, "float" };
+            }
+
+            // mix(a, b, t) → float   (GLSL FMix = 46)
+            if (e.name == "mix" && e.args.size() == 3) {
+                const uint32_t glsl_id = getExtInstID("GLSL.std.450");
+                auto [a_id, a_ty] = emit_expr(e.args[0], locals, mut_locals);
+                auto [b_id, b_ty] = emit_expr(e.args[1], locals, mut_locals);
+                auto [t_id, t_ty] = emit_expr(e.args[2], locals, mut_locals);
+                const uint32_t result_id = getNextId();
+                func_bin.writeInstruction(spv::OpExtInst,
+                    get_type_id("float"), result_id, glsl_id,
+                    static_cast<uint32_t>(46), a_id, b_id, t_id);
+                return { result_id, "float" };
+            }
+
+            // clamp(x, lo, hi) → float   (GLSL FClamp = 43)
+            if (e.name == "clamp" && e.args.size() == 3) {
+                const uint32_t glsl_id = getExtInstID("GLSL.std.450");
+                auto [x_id, x_ty] = emit_expr(e.args[0], locals, mut_locals);
+                auto [lo_id, lo_ty] = emit_expr(e.args[1], locals, mut_locals);
+                auto [hi_id, hi_ty] = emit_expr(e.args[2], locals, mut_locals);
+                const uint32_t result_id = getNextId();
+                func_bin.writeInstruction(spv::OpExtInst,
+                    get_type_id("float"), result_id, glsl_id,
+                    static_cast<uint32_t>(43), x_id, lo_id, hi_id);
+                return { result_id, "float" };
+            }
+
+            // dot(vec2, vec2) → float   (OpDot)
+            if (e.name == "dot" && e.args.size() == 2) {
+                auto [a_id, a_ty] = emit_expr(e.args[0], locals, mut_locals);
+                auto [b_id, b_ty] = emit_expr(e.args[1], locals, mut_locals);
+                const uint32_t result_id = getNextId();
+                func_bin.writeInstruction(spv::OpDot,
+                    get_type_id("float"), result_id, a_id, b_id);
+                return { result_id, "float" };
+            }
+
+            // pow(base, exp) → float   (GLSL Pow = 26)
+            if (e.name == "pow" && e.args.size() == 2) {
+                const uint32_t glsl_id = getExtInstID("GLSL.std.450");
+                auto [a_id, a_ty] = emit_expr(e.args[0], locals, mut_locals);
+                auto [b_id, b_ty] = emit_expr(e.args[1], locals, mut_locals);
+                const uint32_t result_id = getNextId();
+                func_bin.writeInstruction(spv::OpExtInst,
+                    get_type_id("float"), result_id, glsl_id,
+                    static_cast<uint32_t>(26), a_id, b_id);
+                return { result_id, "float" };
+            }
+
             // Regular function call
             std::vector<uint32_t> arg_result_ids;
             for (const auto& arg : e.args)
@@ -814,6 +894,22 @@ std::vector<uint32_t> CodeGenerator::generate(const ast::TranslationUnit& ast,
             for (uint32_t a : arg_result_ids) ops.push_back(a);
             func_bin.writeInstruction(spv::OpFunctionCall, ops);
             return { result_id, ret_type_str };
+        }
+
+        case ast::ExprKind::Swizzle: {
+            // component name → index
+            static const std::unordered_map<std::string, uint32_t> kIdx = {
+                {"x",0},{"y",1},{"z",2},{"w",3},
+                {"r",0},{"g",1},{"b",2},{"a",3},
+            };
+            auto [vec_id, vec_ty] = emit_expr(e.args[0], locals, mut_locals);
+            const uint32_t result_id = getNextId();
+            auto it = kIdx.find(e.name);
+            if (it == kIdx.end())
+                throw std::runtime_error("NekoDSL: unknown swizzle component '" + e.name + "'");
+            func_bin.writeInstruction(spv::OpCompositeExtract,
+                get_type_id("float"), result_id, vec_id, it->second);
+            return { result_id, "float" };
         }
 
         } // switch

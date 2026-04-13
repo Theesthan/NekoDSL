@@ -12,7 +12,7 @@ namespace neko::ast {
 // Expressions
 // ---------------------------------------------------------------------------
 
-enum class ExprKind { IntLiteral, FloatLiteral, Identifier, Call, BinaryOp, UnaryOp };
+enum class ExprKind { IntLiteral, FloatLiteral, Identifier, Call, BinaryOp, UnaryOp, Swizzle };
 
 struct Expr {
     ExprKind    kind      = ExprKind::Identifier;
@@ -43,6 +43,13 @@ struct Expr {
         std::vector<Expr> args;
         args.push_back(std::move(operand));
         return { ExprKind::UnaryOp, 0, 0.0, std::move(op), std::move(args) };
+    }
+    // Swizzle: expr.x / expr.y / expr.z / expr.w
+    // name = component ("x","y","z","w"), args[0] = vector expression
+    static Expr make_swizzle(std::string component, Expr vec) {
+        std::vector<Expr> args;
+        args.push_back(std::move(vec));
+        return { ExprKind::Swizzle, 0, 0.0, std::move(component), std::move(args) };
     }
 };
 

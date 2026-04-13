@@ -49,6 +49,7 @@ enum class TokKind {
     KwImport,     // import
     KwExpose,     // expose
     DQuoteStr,    // "path/to/file"
+    Dot,          // .
     Eof
 };
 
@@ -159,6 +160,7 @@ public:
         case '-': return { TokKind::Minus };
         case '*': return { TokKind::Star };
         case '/': return { TokKind::Slash };
+        case '.': return { TokKind::Dot };
         case '=':
             if (pos_ < src_.size() && src_[pos_] == '=') { ++pos_; return { TokKind::EqEq }; }
             return { TokKind::Eq };
@@ -674,7 +676,14 @@ private:
             consume();
             return ast::Expr::make_unop("-", parse_unary());
         }
-        return parse_primary();
+        ast::Expr e = parse_primary();
+        // Postfix swizzle: expr.x / expr.y / expr.z / expr.w
+        while (check(TokKind::Dot)) {
+            consume();
+            Token comp = expect(TokKind::Ident);
+            e = ast::Expr::make_swizzle(comp.text, std::move(e));
+        }
+        return e;
     }
 
     ast::Expr parse_primary() {
